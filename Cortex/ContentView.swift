@@ -5,6 +5,7 @@
 //  Created by Adam Carlton on 2/19/26.
 //
 
+#if false  // Unused template view disabled
 import SwiftUI
 
 struct ContentView: View {
@@ -22,3 +23,4 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
+#endif  // Unused template view disabled

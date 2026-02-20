@@ -6,9 +6,68 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		46B6CADD2F482D6A0036A6FC /* CortexSafariExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 46B6CAC52F482D6A0036A6FC /* CortexSafariExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		46B6CAFD2F482DF00036A6FC /* CortexShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 46B6CAF12F482DF00036A6FC /* CortexShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		46B6CB342F482EE00036A6FC /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 46B6CB332F482EE00036A6FC /* GRDB */; };
+		46B6CB372F482F190036A6FC /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = 46B6CB362F482F190036A6FC /* SwiftSoup */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		46B6CADB2F482D6A0036A6FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46B6CA7E2F482C6C0036A6FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 46B6CAC42F482D6A0036A6FC;
+			remoteInfo = CortexSafariExtension;
+		};
+		46B6CAFB2F482DF00036A6FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46B6CA7E2F482C6C0036A6FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 46B6CAF02F482DF00036A6FC;
+			remoteInfo = CortexShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		46B6CAB52F482CBC0036A6FC /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				46B6CAFD2F482DF00036A6FC /* CortexShareExtension.appex in Embed Foundation Extensions */,
+				46B6CADD2F482D6A0036A6FC /* CortexSafariExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		46B6CA862F482C6C0036A6FC /* Cortex.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cortex.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		46B6CAC52F482D6A0036A6FC /* CortexSafariExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CortexSafariExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		46B6CAF12F482DF00036A6FC /* CortexShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CortexShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		46B6CB392F482F890036A6FC /* bdcllc.cortex.safar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = bdcllc.cortex.safar.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		46B6CADE2F482D6A0036A6FC /* Exceptions for "CortexSafariExtension" folder in "CortexSafariExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 46B6CAC42F482D6A0036A6FC /* CortexSafariExtension */;
+		};
+		46B6CAFE2F482DF00036A6FC /* Exceptions for "CortexShareExtension" folder in "CortexShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 46B6CAF02F482DF00036A6FC /* CortexShareExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		46B6CA882F482C6C0036A6FC /* Cortex */ = {
@@ -16,10 +75,42 @@
 			path = Cortex;
 			sourceTree = "<group>";
 		};
+		46B6CAC62F482D6A0036A6FC /* CortexSafariExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				46B6CADE2F482D6A0036A6FC /* Exceptions for "CortexSafariExtension" folder in "CortexSafariExtension" target */,
+			);
+			path = CortexSafariExtension;
+			sourceTree = "<group>";
+		};
+		46B6CAF22F482DF00036A6FC /* CortexShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				46B6CAFE2F482DF00036A6FC /* Exceptions for "CortexShareExtension" folder in "CortexShareExtension" target */,
+			);
+			path = CortexShareExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		46B6CA832F482C6C0036A6FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46B6CB342F482EE00036A6FC /* GRDB in Frameworks */,
+				46B6CB372F482F190036A6FC /* SwiftSoup in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		46B6CAC22F482D6A0036A6FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		46B6CAEE2F482DF00036A6FC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -32,7 +123,10 @@
 		46B6CA7D2F482C6C0036A6FC = {
 			isa = PBXGroup;
 			children = (
+				46B6CB392F482F890036A6FC /* bdcllc.cortex.safar.entitlements */,
 				46B6CA882F482C6C0036A6FC /* Cortex */,
+				46B6CAC62F482D6A0036A6FC /* CortexSafariExtension */,
+				46B6CAF22F482DF00036A6FC /* CortexShareExtension */,
 				46B6CA872F482C6C0036A6FC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +135,8 @@
 			isa = PBXGroup;
 			children = (
 				46B6CA862F482C6C0036A6FC /* Cortex.app */,
+				46B6CAC52F482D6A0036A6FC /* CortexSafariExtension.appex */,
+				46B6CAF12F482DF00036A6FC /* CortexShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,20 +151,69 @@
 				46B6CA822F482C6C0036A6FC /* Sources */,
 				46B6CA832F482C6C0036A6FC /* Frameworks */,
 				46B6CA842F482C6C0036A6FC /* Resources */,
+				46B6CAB52F482CBC0036A6FC /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				46B6CADC2F482D6A0036A6FC /* PBXTargetDependency */,
+				46B6CAFC2F482DF00036A6FC /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				46B6CA882F482C6C0036A6FC /* Cortex */,
 			);
 			name = Cortex;
 			packageProductDependencies = (
+				46B6CB332F482EE00036A6FC /* GRDB */,
+				46B6CB362F482F190036A6FC /* SwiftSoup */,
 			);
 			productName = Cortex;
 			productReference = 46B6CA862F482C6C0036A6FC /* Cortex.app */;
 			productType = "com.apple.product-type.application";
+		};
+		46B6CAC42F482D6A0036A6FC /* CortexSafariExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46B6CADF2F482D6A0036A6FC /* Build configuration list for PBXNativeTarget "CortexSafariExtension" */;
+			buildPhases = (
+				46B6CAC12F482D6A0036A6FC /* Sources */,
+				46B6CAC22F482D6A0036A6FC /* Frameworks */,
+				46B6CAC32F482D6A0036A6FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				46B6CAC62F482D6A0036A6FC /* CortexSafariExtension */,
+			);
+			name = CortexSafariExtension;
+			packageProductDependencies = (
+			);
+			productName = CortexSafariExtension;
+			productReference = 46B6CAC52F482D6A0036A6FC /* CortexSafariExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		46B6CAF02F482DF00036A6FC /* CortexShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46B6CAFF2F482DF00036A6FC /* Build configuration list for PBXNativeTarget "CortexShareExtension" */;
+			buildPhases = (
+				46B6CAED2F482DF00036A6FC /* Sources */,
+				46B6CAEE2F482DF00036A6FC /* Frameworks */,
+				46B6CAEF2F482DF00036A6FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				46B6CAF22F482DF00036A6FC /* CortexShareExtension */,
+			);
+			name = CortexShareExtension;
+			packageProductDependencies = (
+			);
+			productName = CortexShareExtension;
+			productReference = 46B6CAF12F482DF00036A6FC /* CortexShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -77,11 +222,21 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
+				KnownAssetTags = (
+					New,
+				);
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					46B6CA852F482C6C0036A6FC = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					46B6CAC42F482D6A0036A6FC = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					46B6CAF02F482DF00036A6FC = {
+						CreatedOnToolsVersion = 26.2;
+						LastSwiftMigration = 2620;
 					};
 				};
 			};
@@ -94,18 +249,38 @@
 			);
 			mainGroup = 46B6CA7D2F482C6C0036A6FC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				46B6CB322F482EE00036A6FC /* XCRemoteSwiftPackageReference "GRDB" */,
+				46B6CB352F482F190036A6FC /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 46B6CA872F482C6C0036A6FC /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				46B6CA852F482C6C0036A6FC /* Cortex */,
+				46B6CAC42F482D6A0036A6FC /* CortexSafariExtension */,
+				46B6CAF02F482DF00036A6FC /* CortexShareExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		46B6CA842F482C6C0036A6FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		46B6CAC32F482D6A0036A6FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		46B6CAEF2F482DF00036A6FC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +297,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		46B6CAC12F482D6A0036A6FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		46B6CAED2F482DF00036A6FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		46B6CADC2F482D6A0036A6FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 46B6CAC42F482D6A0036A6FC /* CortexSafariExtension */;
+			targetProxy = 46B6CADB2F482D6A0036A6FC /* PBXContainerItemProxy */;
+		};
+		46B6CAFC2F482DF00036A6FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 46B6CAF02F482DF00036A6FC /* CortexShareExtension */;
+			targetProxy = 46B6CAFB2F482DF00036A6FC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		46B6CA8F2F482C6D0036A6FC /* Debug */ = {
@@ -248,11 +450,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Cortex/CortexDebug.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9S8V795JSN;
 				ENABLE_APP_SANDBOX = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -261,7 +475,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = bdllc.Cortex;
+				PRODUCT_BUNDLE_IDENTIFIER = io.bdcllc.cortex;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -278,9 +492,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Cortex/Cortex.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9S8V795JSN;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -291,13 +507,176 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = bdllc.Cortex;
+				PRODUCT_BUNDLE_IDENTIFIER = io.bdcllc.cortex;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		46B6CAE02F482D6A0036A6FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CortexSafariExtension/CortexSafariExtensionDebug.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9S8V795JSN;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CortexSafariExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CortexSafariExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.bdcllc.cortex.safari;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		46B6CAE12F482D6A0036A6FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CortexSafariExtension/CortexSafariExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9S8V795JSN;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CortexSafariExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CortexSafariExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.bdcllc.cortex.safari;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		46B6CB002F482DF00036A6FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CortexShareExtension/CortexShareExtensionDebug.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9S8V795JSN;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CortexShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CortexShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.bdcllc.cortex.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CortexShareExtension/CortexShareExtension-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		46B6CB012F482DF00036A6FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CortexShareExtension/CortexShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9S8V795JSN;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CortexShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CortexShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.bdcllc.cortex.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CortexShareExtension/CortexShareExtension-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -324,7 +703,57 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		46B6CADF2F482D6A0036A6FC /* Build configuration list for PBXNativeTarget "CortexSafariExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46B6CAE02F482D6A0036A6FC /* Debug */,
+				46B6CAE12F482D6A0036A6FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46B6CAFF2F482DF00036A6FC /* Build configuration list for PBXNativeTarget "CortexShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46B6CB002F482DF00036A6FC /* Debug */,
+				46B6CB012F482DF00036A6FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		46B6CB322F482EE00036A6FC /* XCRemoteSwiftPackageReference "GRDB" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+		46B6CB352F482F190036A6FC /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.11.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		46B6CB332F482EE00036A6FC /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 46B6CB322F482EE00036A6FC /* XCRemoteSwiftPackageReference "GRDB" */;
+			productName = GRDB;
+		};
+		46B6CB362F482F190036A6FC /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 46B6CB352F482F190036A6FC /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 46B6CA7E2F482C6C0036A6FC /* Project object */;
 }

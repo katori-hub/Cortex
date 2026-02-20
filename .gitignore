@@ -1,0 +1,22 @@
+# Xcode
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+DerivedData/
+.build/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Core ML output (large binary — do not commit)
+*.mlpackage/
+
+# Credentials
+*.env
+secrets.plist
