@@ -123,6 +123,8 @@ final class CaptureService: ObservableObject {
                 return ev
             }
 
+            var capturedItemID: Int64? = nil
+
             try await db.write { db in
                 var itemToInsert = preparedItem
                 try? itemToInsert.insert(db, onConflict: .ignore)
@@ -136,6 +138,7 @@ final class CaptureService: ObservableObject {
                 )
 
                 guard let entityId = itemId else { return }
+                capturedItemID = entityId
 
                 // Insert the event using the preconstructed main-actor event, updating the entityId now that we know it
                 var event = preconstructedEvent
@@ -145,6 +148,11 @@ final class CaptureService: ObservableObject {
 
             logger.info("Captured: \(url)")
             await refreshStats()
+
+            // Inline title fetch — fires async, does not block capture
+            if let id = capturedItemID, title == nil {
+                Task { await self.fetchAndUpdateTitle(itemID: id, url: url) }
+            }
 
         } catch {
             logger.error("Capture failed for \(url): \(error)")
@@ -172,6 +180,27 @@ final class CaptureService: ObservableObject {
             await MainActor.run {
                 self.logger.error("Stats refresh failed: \(error)")
             }
+        }
+    }
+
+    // MARK: - Title Fetching
+
+    private func fetchAndUpdateTitle(itemID: Int64, url: String) async {
+        let result = await TitleFetcher.shared.fetch(urlString: url)
+        guard result.title != nil || result.description != nil else { return }
+        do {
+            try await DatabaseManager.shared.dbQueue.write { db in
+                if var item = try Item.fetchOne(db, key: itemID) {
+                    if let title = result.title       { item.title   = title }
+                    if let desc  = result.description { item.summary = desc  }
+                    item.status = .indexed
+                    try item.update(db)
+                }
+            }
+            await refreshStats()
+            logger.info("[TitleFetcher] Updated item \(itemID) — \(result.title ?? "(no title)")")
+        } catch {
+            logger.error("[TitleFetcher] DB update failed for item \(itemID): \(error)")
         }
     }
 }

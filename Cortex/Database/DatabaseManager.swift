@@ -145,6 +145,12 @@ final class DatabaseManager {
                 on: "events", columns: ["source"])
         }
 
+        migrator.registerMigration("v2_add_priority") { db in
+            try db.alter(table: "items") { t in
+                t.add(column: "priority", .text).notNull().defaults(to: "normal")
+            }
+        }
+
         return migrator
     }
 }

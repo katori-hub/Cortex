@@ -50,6 +50,30 @@ enum SourcePlatform: String, Codable, CaseIterable, Sendable {
     }
 }
 
+// MARK: - ItemPriority
+
+enum ItemPriority: String, Codable, CaseIterable, DatabaseValueConvertible {
+    case high   = "high"
+    case normal = "normal"
+    case low    = "low"
+
+    var label: String {
+        switch self {
+        case .high:   return "High"
+        case .normal: return "Normal"
+        case .low:    return "Low"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .high:   return "exclamationmark.circle.fill"
+        case .normal: return "minus.circle"
+        case .low:    return "arrow.down.circle"
+        }
+    }
+}
+
 // MARK: - Item
 
 struct Item: Identifiable, Equatable, Hashable, Sendable {
@@ -70,6 +94,7 @@ struct Item: Identifiable, Equatable, Hashable, Sendable {
     var status: ItemStatus
     var readByUser: Bool
     var starred: Bool
+    var priority: ItemPriority
     
     // MARK: Hashable
     
@@ -88,6 +113,7 @@ struct Item: Identifiable, Equatable, Hashable, Sendable {
         self.status = .pending
         self.readByUser = false
         self.starred = false
+        self.priority = .normal
     }
 
     // MARK: Convenience
@@ -141,6 +167,7 @@ extension Item: FetchableRecord, MutablePersistableRecord {
         nonisolated static let status         = Column("status")
         nonisolated static let readByUser     = Column("read_by_user")
         nonisolated static let starred        = Column("starred")
+        nonisolated static let priority       = Column("priority")
     }
 
     nonisolated init(row: Row) throws {
@@ -161,6 +188,7 @@ extension Item: FetchableRecord, MutablePersistableRecord {
         status = row["status"]
         readByUser = row["read_by_user"]
         starred = row["starred"]
+        priority = row["priority"] ?? .normal
     }
 
     func encode(to container: inout PersistenceContainer) throws {
@@ -181,6 +209,7 @@ extension Item: FetchableRecord, MutablePersistableRecord {
         container["status"] = status
         container["read_by_user"] = readByUser
         container["starred"] = starred
+        container["priority"] = priority
     }
 
     mutating func didInsert(_ inserted: InsertionSuccess) {

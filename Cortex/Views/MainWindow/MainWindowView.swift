@@ -14,6 +14,11 @@ struct MainWindowView: View {
     @StateObject private var viewModel = MainWindowViewModel()
     @State private var selectedItem: Item? = nil
     @State private var selectedFilter: SidebarFilter = .all
+    @State private var itemPendingDelete: Item? = nil
+    @State private var showDeleteConfirmation: Bool = false
+    @State private var hoveredItem: Item? = nil
+    @State private var showAddURL: Bool = false
+    @State private var newURL: String = ""
 
     var body: some View {
         NavigationSplitView {
@@ -31,6 +36,13 @@ struct MainWindowView: View {
                 .help("Refresh")
             }
             ToolbarItem(placement: .primaryAction) {
+                Button(action: { showAddURL = true }) {
+                    Image(systemName: "plus")
+                }
+                .help("Add URL (⌘N)")
+                .keyboardShortcut("n", modifiers: .command)
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Text("\(viewModel.filteredItems.count) items")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -46,6 +58,43 @@ struct MainWindowView: View {
             // Refresh when new items arrive via extension
             Task { await viewModel.load(filter: selectedFilter) }
         }
+        .alert("Delete this item?", isPresented: $showDeleteConfirmation, presenting: itemPendingDelete) { item in
+            Button("Delete", role: .destructive) {
+                Task {
+                    await viewModel.deleteItem(item)
+                    if selectedItem == item { selectedItem = nil }
+                }
+            }
+            Button("Cancel", role: .cancel) { itemPendingDelete = nil }
+        } message: { _ in
+            Text("This cannot be undone.")
+        }
+        .sheet(isPresented: $showAddURL, onDismiss: { newURL = "" }) {
+            VStack(spacing: 16) {
+                Text("Add URL")
+                    .font(.headline)
+                TextField("https://", text: $newURL)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 360)
+                    .onSubmit { submitURL() }
+                HStack {
+                    Button("Cancel") { showAddURL = false }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Add") { submitURL() }
+                        .keyboardShortcut(.defaultAction)
+                        .disabled(newURL.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .padding(24)
+        }
+    }
+
+    private func submitURL() {
+        let trimmed = newURL.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        showAddURL = false
+        newURL = ""
+        Task { await viewModel.addURL(trimmed) }
     }
 
     // MARK: - Sidebar
@@ -72,8 +121,8 @@ struct MainWindowView: View {
     private func sidebarRow(for filter: SidebarFilter) -> some View {
         if filter == .all {
             Label(filter.title, systemImage: filter.icon)
-                .tag(filter)
                 .badge(viewModel.totalCount)
+                .tag(filter)
         } else {
             Label(filter.title, systemImage: filter.icon)
                 .tag(filter)
@@ -102,6 +151,69 @@ struct MainWindowView: View {
             List(viewModel.filteredItems, selection: $selectedItem) { item in
                 ItemRow(item: item)
                     .tag(item)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            itemPendingDelete = item
+                            showDeleteConfirmation = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    .overlay(alignment: .trailing) {
+                        HStack(spacing: 6) {
+                            Button {
+                                Task { await viewModel.toggleStar(item) }
+                            } label: {
+                                Image(systemName: item.starred ? "star.fill" : "star")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(item.starred ? .yellow : .secondary.opacity(0.4))
+                            }
+                            .buttonStyle(.plain)
+
+                            if hoveredItem?.id == item.id {
+                                Button {
+                                    itemPendingDelete = item
+                                    showDeleteConfirmation = true
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.trailing, 12)
+                    }
+                    .onHover { isHovered in
+                        hoveredItem = isHovered ? item : nil
+                    }
+                    .contextMenu {
+                        Menu("Set Priority") {
+                            ForEach(ItemPriority.allCases, id: \.self) { priority in
+                                Button {
+                                    Task { await viewModel.setPriority(priority, for: item) }
+                                } label: {
+                                    Label(
+                                        priority.label + (item.priority == priority ? " ✓" : ""),
+                                        systemImage: priority.systemImage
+                                    )
+                                }
+                            }
+                        }
+                    }
+            }
+            .onDeleteCommand {
+                if let item = selectedItem {
+                    itemPendingDelete = item
+                    showDeleteConfirmation = true
+                }
+            }
+            .onKeyPress(.return) {
+                if let item = selectedItem {
+                    Task { await viewModel.openAndMarkRead(item) }
+                    return .handled
+                }
+                return .ignored
             }
             .listStyle(.inset)
         }
@@ -181,12 +293,6 @@ private struct ItemRow: View {
             Text(item.capturedAt.formatted(.relative(presentation: .named)))
                 .font(.caption2)
                 .foregroundColor(Color(NSColor.tertiaryLabelColor))
-
-            if item.starred {
-                Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
-                    .font(.system(size: 11))
-            }
         }
     }
 }
@@ -269,8 +375,10 @@ final class MainWindowViewModel: ObservableObject {
     @Published var filteredItems: [Item] = []
     @Published var totalCount: Int = 0
     @Published var isLoading: Bool = false
+    private var currentFilter: SidebarFilter = .all
 
     func load(filter: SidebarFilter) async {
+        currentFilter = filter
         guard let db = DatabaseManager.shared.dbQueue else { return }
         isLoading = true
         defer { isLoading = false }
@@ -308,6 +416,82 @@ final class MainWindowViewModel: ObservableObject {
         do {
             totalCount = try await db.read { try Item.fetchCount($0) }
         } catch { }
+    }
+
+    func deleteItem(_ item: Item) async {
+        guard let db = DatabaseManager.shared.dbQueue else { return }
+        do {
+            try await db.write { db in
+                _ = try item.delete(db)
+            }
+            filteredItems.removeAll { $0.id == item.id }
+            totalCount = max(0, totalCount - 1)
+        } catch {
+            print("MainWindowViewModel deleteItem error: \(error)")
+        }
+    }
+
+    func toggleStar(_ item: Item) async {
+        var updated = item
+        updated.starred = !item.starred
+        do {
+            try await DatabaseManager.shared.dbQueue.write { [updated] db in
+                try updated.update(db)
+            }
+            if let index = filteredItems.firstIndex(where: { $0.id == item.id }) {
+                filteredItems[index] = updated
+            }
+        } catch {
+            print("[Cortex] toggleStar failed: \(error)")
+        }
+    }
+
+    func setPriority(_ priority: ItemPriority, for item: Item) async {
+        var updated = item
+        updated.priority = priority
+        do {
+            try await DatabaseManager.shared.dbQueue.write { [updated] db in
+                try updated.update(db)
+            }
+            if let index = filteredItems.firstIndex(where: { $0.id == item.id }) {
+                filteredItems[index] = updated
+            }
+        } catch {
+            print("[Cortex] setPriority failed: \(error)")
+        }
+    }
+
+    func addURL(_ urlString: String) async {
+        guard URL(string: urlString) != nil else { return }
+        var item = Item(url: urlString)
+        do {
+            try await DatabaseManager.shared.dbQueue.write { [item] db in
+                var mutableItem = item
+                try mutableItem.insert(db)
+            }
+            await load(filter: currentFilter)
+        } catch {
+            print("[Cortex] addURL failed: \(error)")
+        }
+    }
+
+    func openAndMarkRead(_ item: Item) async {
+        if let url = URL(string: item.url) {
+            NSWorkspace.shared.open(url)
+        }
+        guard !item.readByUser else { return }
+        var updated = item
+        updated.readByUser = true
+        do {
+            try await DatabaseManager.shared.dbQueue.write { [updated] db in
+                try updated.update(db)
+            }
+            if let index = filteredItems.firstIndex(where: { $0.id == item.id }) {
+                filteredItems[index] = updated
+            }
+        } catch {
+            print("[Cortex] openAndMarkRead failed: \(error)")
+        }
     }
 }
 

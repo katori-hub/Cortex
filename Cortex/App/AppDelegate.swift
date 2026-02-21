@@ -113,6 +113,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(withTitle: "Open Cortex", action: #selector(showMainWindow), keyEquivalent: "1")
         menu.addItem(.separator())
+        menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Cortex", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
@@ -131,6 +133,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
         }
+    }
+
+    @objc private func showSettings() {
+        closePopover()
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     // MARK: - Quick Actions
