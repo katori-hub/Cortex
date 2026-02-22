@@ -151,7 +151,14 @@ final class CaptureService: ObservableObject {
 
             // Inline title fetch — fires async, does not block capture
             if let id = capturedItemID, title == nil {
-                Task { await self.fetchAndUpdateTitle(itemID: id, url: url) }
+                Task {
+                    await self.fetchAndUpdateTitle(itemID: id, url: url)
+                    // After title fetch completes, trigger extraction queue
+                    await ExtractionQueue.shared.processQueue()
+                }
+            } else {
+                // Item already has a title — trigger extraction directly
+                Task { await ExtractionQueue.shared.processQueue() }
             }
 
         } catch {

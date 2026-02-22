@@ -151,6 +151,22 @@ final class DatabaseManager {
             }
         }
 
+        migrator.registerMigration("v3_add_embeddings") { db in
+            try db.create(table: "item_embeddings") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("item_id", .integer).notNull()
+                    .references("items", column: "id", onDelete: .cascade)
+                t.column("vector_blob", .blob).notNull()
+                t.column("model_version", .text).notNull().defaults(to: "NLEmbedding-en")
+                t.column("created_at", .datetime).notNull().defaults(sql: "CURRENT_TIMESTAMP")
+            }
+            try db.create(
+                index: "idx_embeddings_item",
+                on: "item_embeddings", columns: ["item_id"],
+                unique: true
+            )
+        }
+
         return migrator
     }
 }

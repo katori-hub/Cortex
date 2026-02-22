@@ -19,6 +19,9 @@ struct MainWindowView: View {
     @State private var hoveredItem: Item? = nil
     @State private var showAddURL: Bool = false
     @State private var newURL: String = ""
+    @State private var searchText: String = ""
+    @State private var searchResults: [Item] = []
+    @State private var isSearching: Bool = false
 
     var body: some View {
         NavigationSplitView {
@@ -46,6 +49,34 @@ struct MainWindowView: View {
                 Text("\(viewModel.filteredItems.count) items")
                     .font(.caption)
                     .foregroundColor(.secondary)
+            }
+            ToolbarItem(placement: .automatic) {
+                HStack(spacing: 4) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    TextField("Semantic search…", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .frame(width: 180)
+                        .onSubmit { performSearch() }
+                    if isSearching {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    if !searchText.isEmpty {
+                        Button {
+                            searchText = ""
+                            searchResults = []
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
             }
         }
         .onAppear {
@@ -86,6 +117,60 @@ struct MainWindowView: View {
                 }
             }
             .padding(24)
+        }
+    }
+
+    private func performSearch() {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else {
+            searchResults = []
+            return
+        }
+        isSearching = true
+        Task {
+            defer { isSearching = false }
+
+            guard let queryVector = await EmbeddingService.shared.embed(text: query),
+                  let db = DatabaseManager.shared.dbQueue
+            else {
+                searchResults = []
+                return
+            }
+
+            do {
+                let rows = try await db.read { db -> [(itemId: Int64, vector: Data)] in
+                    let rows = try Row.fetchAll(db, sql: "SELECT item_id, vector_blob FROM item_embeddings")
+                    return rows.map { (itemId: $0["item_id"] as Int64, vector: $0["vector_blob"] as Data) }
+                }
+
+                var scored: [(id: Int64, score: Float)] = []
+                for row in rows {
+                    let itemVector = await EmbeddingService.shared.vectorFromData(row.vector)
+                    let score = await EmbeddingService.shared.cosineSimilarity(queryVector, itemVector)
+                    if score > 0.3 {
+                        scored.append((id: row.itemId, score: score))
+                    }
+                }
+                scored.sort { $0.score > $1.score }
+
+                let topIds = scored.prefix(20).map { $0.id }
+                guard !topIds.isEmpty else {
+                    searchResults = []
+                    return
+                }
+
+                let items = try await db.read { db -> [Item] in
+                    try Item.filter(keys: topIds).fetchAll(db)
+                }
+
+                let itemDict = Dictionary(uniqueKeysWithValues: items.compactMap { item in
+                    item.id.map { ($0, item) }
+                })
+                searchResults = topIds.compactMap { itemDict[$0] }
+            } catch {
+                print("[Cortex] Search failed: \(error)")
+                searchResults = []
+            }
         }
     }
 
@@ -138,7 +223,33 @@ struct MainWindowView: View {
 
     @ViewBuilder
     private var itemList: some View {
-        if viewModel.isLoading {
+        if !searchResults.isEmpty {
+            List(searchResults, selection: $selectedItem) { item in
+                ItemRow(item: item)
+                    .tag(item)
+                    .overlay(alignment: .trailing) {
+                        HStack(spacing: 6) {
+                            Button {
+                                Task { await viewModel.toggleStar(item) }
+                            } label: {
+                                Image(systemName: item.starred ? "star.fill" : "star")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(item.starred ? .yellow : .secondary.opacity(0.4))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.trailing, 12)
+                    }
+            }
+            .onKeyPress(.return) {
+                if let item = selectedItem {
+                    Task { await viewModel.openAndMarkRead(item) }
+                    return .handled
+                }
+                return .ignored
+            }
+            .listStyle(.inset)
+        } else if viewModel.isLoading {
             ProgressView("Loading…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if viewModel.filteredItems.isEmpty {

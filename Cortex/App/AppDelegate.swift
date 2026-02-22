@@ -38,7 +38,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 2. Start listening for extension captures
         captureService.startListening()
 
-        // 3. Set up menu bar
+        // 3. Start background extraction queue
+        Task {
+            // Small delay to let capture pipeline settle on launch
+            try? await Task.sleep(for: .seconds(5))
+            await ExtractionQueue.shared.processQueue()
+        }
+
+        // 4. Set up menu bar
         setupMenuBar()
 
         // 4. Hide dock icon — Cortex lives in the menu bar
@@ -135,11 +142,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private var settingsWindow: NSWindow?
+
     @objc private func showSettings() {
         closePopover()
+
+        if let existing = settingsWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let settingsView = SettingsView()
+        let hostingController = NSHostingController(rootView: settingsView)
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "Cortex Settings"
+        window.styleMask = [.titled, .closable]
+        window.setContentSize(NSSize(width: 450, height: 200))
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        self.settingsWindow = window
+
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     // MARK: - Quick Actions

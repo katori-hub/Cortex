@@ -16,8 +16,5 @@ struct CortexApp: App {
             MainWindowView()
                 .environmentObject(appDelegate.captureService)
         }
-        Settings {
-            SettingsView()
-        }
     }
 }
