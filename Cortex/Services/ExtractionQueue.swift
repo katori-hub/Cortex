@@ -148,6 +148,9 @@ actor ExtractionQueue {
                 }
                 await logEvent(itemId: itemId, type: .itemEmbedded, db: db)
                 logger.info("Embedded item \(itemId)")
+
+                // Step 4: Discover connections to other embedded items
+                await ConnectionDiscoveryService.shared.discoverConnections(for: itemId)
             } catch {
                 logger.error("Embedding storage failed for item \(itemId): \(error)")
             }

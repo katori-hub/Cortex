@@ -167,6 +167,82 @@ final class DatabaseManager {
             )
         }
 
+        migrator.registerMigration("v4_add_connections") { db in
+            try db.create(table: "connections") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("item_id_a", .integer).notNull()
+                    .references("items", column: "id", onDelete: .cascade)
+                t.column("item_id_b", .integer).notNull()
+                    .references("items", column: "id", onDelete: .cascade)
+                t.column("similarity_score", .double).notNull()
+                t.column("dismissed", .boolean).notNull().defaults(to: false)
+                t.column("discovered_at", .datetime).notNull().defaults(sql: "CURRENT_TIMESTAMP")
+            }
+            try db.create(
+                index: "idx_connections_a",
+                on: "connections", columns: ["item_id_a"]
+            )
+            try db.create(
+                index: "idx_connections_b",
+                on: "connections", columns: ["item_id_b"]
+            )
+        }
+
+        migrator.registerMigration("v5_add_projects") { db in
+            try db.create(table: "projects") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("name", .text).notNull()
+                t.column("created_at", .datetime).notNull().defaults(sql: "CURRENT_TIMESTAMP")
+            }
+            try db.create(table: "project_items") { t in
+                t.column("project_id", .integer).notNull()
+                    .references("projects", onDelete: .cascade)
+                t.column("item_id", .integer).notNull()
+                    .references("items", onDelete: .cascade)
+                t.column("added_at", .datetime).notNull().defaults(sql: "CURRENT_TIMESTAMP")
+                t.primaryKey(["project_id", "item_id"])
+            }
+            try db.create(
+                index: "idx_project_items_item",
+                on: "project_items", columns: ["item_id"]
+            )
+        }
+
+        migrator.registerMigration("v6_add_tasks") { db in
+            try db.create(table: "tasks") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("title", .text).notNull()
+                t.column("notes", .text)
+                t.column("source_item_id", .integer)
+                    .references("items", column: "id", onDelete: .setNull)
+                t.column("status", .text).notNull().defaults(to: "proposed")
+                t.column("created_at", .datetime).notNull().defaults(sql: "CURRENT_TIMESTAMP")
+                t.column("updated_at", .datetime)
+            }
+            try db.create(
+                index: "idx_tasks_status",
+                on: "tasks", columns: ["status"]
+            )
+        }
+
+        migrator.registerMigration("v7_add_synthesis_runs") { db in
+            try db.create(table: "synthesis_runs") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("started_at", .datetime).notNull().defaults(sql: "CURRENT_TIMESTAMP")
+                t.column("completed_at", .datetime)
+                t.column("item_count", .integer).notNull().defaults(to: 0)
+                t.column("themes_json", .text)
+                t.column("insights_json", .text)
+                t.column("proposed_tasks_json", .text)
+                t.column("status", .text).notNull().defaults(to: "running")
+                t.column("error_message", .text)
+            }
+            try db.create(
+                index: "idx_synthesis_runs_started",
+                on: "synthesis_runs", columns: ["started_at"]
+            )
+        }
+
         return migrator
     }
 }

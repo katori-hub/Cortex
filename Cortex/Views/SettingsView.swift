@@ -9,6 +9,9 @@ struct SettingsView: View {
 
     @AppStorage("geminiAPIKey") private var geminiAPIKey: String = ""
     @State private var keyVisible: Bool = false
+    @State private var saved: Bool = false
+    @State private var lastRun: CortexSynthesisRun? = nil
+    @State private var isSynthesizing: Bool = false
 
     var body: some View {
         TabView {
@@ -20,8 +23,12 @@ struct SettingsView: View {
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
+            synthesisTab
+                .tabItem {
+                    Label("Synthesis", systemImage: "wand.and.stars")
+                }
         }
-        .frame(width: 450, height: 200)
+        .frame(width: 450, height: 220)
     }
 
     private var geminiTab: some View {
@@ -43,7 +50,19 @@ struct SettingsView: View {
             Text("Get a key at aistudio.google.com/apikey")
                 .font(.caption)
                 .foregroundColor(.secondary)
+            HStack {
+                Spacer()
+                Button(saved ? "Saved ✓" : "Save") {
+                    saved = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        saved = false
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(geminiAPIKey.isEmpty)
+            }
         }
+
         .formStyle(.grouped)
         .padding()
     }
@@ -55,5 +74,51 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private var synthesisTab: some View {
+        Form {
+            LabeledContent("Last Run") {
+                if let run = lastRun {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(run.startedAt.formatted(.relative(presentation: .named)))
+                        Text(run.status.capitalized)
+                            .font(.caption)
+                            .foregroundColor(run.status == "completed" ? .green : .secondary)
+                    }
+                } else {
+                    Text("Never")
+                        .foregroundColor(.secondary)
+                }
+            }
+            HStack {
+                Spacer()
+                Button(isSynthesizing ? "Running…" : "Run Now") {
+                    isSynthesizing = true
+                    Task {
+                        await SynthesisService.shared.runSynthesis()
+                        if let db = DatabaseManager.shared.dbQueue {
+                            lastRun = try? await db.read { db in
+                                try CortexSynthesisRun.latest.fetchOne(db)
+                            }
+                        }
+                        isSynthesizing = false
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isSynthesizing)
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+        .onAppear {
+            Task {
+                if let db = DatabaseManager.shared.dbQueue {
+                    lastRun = try? await db.read { db in
+                        try CortexSynthesisRun.latest.fetchOne(db)
+                    }
+                }
+            }
+        }
     }
 }

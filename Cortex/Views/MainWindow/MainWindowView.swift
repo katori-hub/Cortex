@@ -22,13 +22,21 @@ struct MainWindowView: View {
     @State private var searchText: String = ""
     @State private var searchResults: [Item] = []
     @State private var isSearching: Bool = false
+    @State private var showCreateProject: Bool = false
+    @State private var newProjectName: String = ""
+    @State private var showAddTask: Bool = false
+    @State private var newTaskTitle: String = ""
 
     var body: some View {
         NavigationSplitView {
             sidebar
                 .navigationSplitViewColumnWidth(min: 180, ideal: 200)
         } detail: {
-            itemList
+            if case .tasks = selectedFilter {
+                taskList
+            } else {
+                itemList
+            }
         }
         .navigationTitle("Cortex")
         .toolbar {
@@ -80,9 +88,15 @@ struct MainWindowView: View {
             }
         }
         .onAppear {
-            Task { await viewModel.load(filter: selectedFilter) }
+            Task {
+                await viewModel.load(filter: selectedFilter)
+                await viewModel.loadProjects()
+                await viewModel.loadTasks()
+            }
         }
         .onChange(of: selectedFilter) { oldValue, newValue in
+            searchText = ""
+            searchResults = []
             Task { await viewModel.load(filter: newValue) }
         }
         .onChange(of: captureService.totalCount) {
@@ -147,13 +161,13 @@ struct MainWindowView: View {
                 for row in rows {
                     let itemVector = await EmbeddingService.shared.vectorFromData(row.vector)
                     let score = await EmbeddingService.shared.cosineSimilarity(queryVector, itemVector)
-                    if score > 0.3 {
+                    if score > 0.5 {
                         scored.append((id: row.itemId, score: score))
                     }
                 }
                 scored.sort { $0.score > $1.score }
 
-                let topIds = scored.prefix(20).map { $0.id }
+                let topIds = scored.prefix(10).map { $0.id }
                 guard !topIds.isEmpty else {
                     searchResults = []
                     return
@@ -182,6 +196,42 @@ struct MainWindowView: View {
         Task { await viewModel.addURL(trimmed) }
     }
 
+    private func loadRelatedItems(for item: Item) {
+        guard let itemId = item.id else { return }
+        isSearching = true
+        searchText = "Related: \(item.displayTitle)"
+        Task {
+            defer { isSearching = false }
+            guard let db = DatabaseManager.shared.dbQueue else {
+                searchResults = []
+                return
+            }
+            do {
+                let connections = try await db.read { db in
+                    try ItemConnection.active(for: itemId).fetchAll(db)
+                }
+                let relatedIds = connections.map { $0.itemIdA == itemId ? $0.itemIdB : $0.itemIdA }
+                guard !relatedIds.isEmpty else {
+                    searchResults = []
+                    return
+                }
+                let items = try await db.read { db in
+                    try Item.filter(keys: relatedIds).fetchAll(db)
+                }
+                let itemMap = Dictionary(
+                    uniqueKeysWithValues: items.compactMap { item -> (Int64, Item)? in
+                        guard let id = item.id else { return nil }
+                        return (id, item)
+                    }
+                )
+                searchResults = relatedIds.compactMap { itemMap[$0] }
+            } catch {
+                print("[Cortex] loadRelatedItems failed: \(error)")
+                searchResults = []
+            }
+        }
+    }
+
     // MARK: - Sidebar
 
     private var sidebar: some View {
@@ -197,9 +247,57 @@ struct MainWindowView: View {
                     platformRow(for: platform)
                 }
             }
+
+            Section {
+                ForEach(viewModel.projects) { project in
+                    projectRow(for: project)
+                }
+            } header: {
+                HStack {
+                    Text("Projects")
+                    Spacer()
+                    Button(action: { showCreateProject = true }) {
+                        Image(systemName: "plus")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .help("New Project")
+                }
+            }
         }
         .listStyle(.sidebar)
         .navigationTitle("Cortex")
+        .sheet(isPresented: $showCreateProject, onDismiss: { newProjectName = "" }) {
+            VStack(spacing: 16) {
+                Text("New Project")
+                    .font(.headline)
+                TextField("Project name", text: $newProjectName)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 260)
+                    .onSubmit { submitProject() }
+                HStack {
+                    Button("Cancel") { showCreateProject = false }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Create") { submitProject() }
+                        .keyboardShortcut(.defaultAction)
+                        .disabled(newProjectName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .padding(24)
+        }
+    }
+
+    private func projectRow(for project: Project) -> some View {
+        Label(project.name, systemImage: "folder")
+            .tag(SidebarFilter.project(project))
+    }
+
+    private func submitProject() {
+        let name = newProjectName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        showCreateProject = false
+        newProjectName = ""
+        Task { await viewModel.createProject(name: name) }
     }
     
     @ViewBuilder
@@ -299,6 +397,26 @@ struct MainWindowView: View {
                         hoveredItem = isHovered ? item : nil
                     }
                     .contextMenu {
+                        Button("Show Related Items") {
+                            loadRelatedItems(for: item)
+                        }
+                        Divider()
+                        if case .project(let currentProject) = selectedFilter {
+                            Button("Remove from \(currentProject.name)") {
+                                Task { await viewModel.removeFromProject(currentProject, item: item) }
+                            }
+                            Divider()
+                        }
+                        if !viewModel.projects.isEmpty {
+                            Menu("Add to Project") {
+                                ForEach(viewModel.projects) { project in
+                                    Button(project.name) {
+                                        Task { await viewModel.addToProject(project, item: item) }
+                                    }
+                                }
+                            }
+                            Divider()
+                        }
                         Menu("Set Priority") {
                             ForEach(ItemPriority.allCases, id: \.self) { priority in
                                 Button {
@@ -339,7 +457,77 @@ struct MainWindowView: View {
             ? "Capture links from Safari using the Cortex extension, or paste a URL in the menu bar."
             : "Items matching this filter will appear here."
     }
-}
+
+    // MARK: - Task List
+
+    @ViewBuilder
+    private var taskList: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Tasks")
+                    .font(.headline)
+                Spacer()
+                Button("Add Task") { showAddTask = true }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+
+            Divider()
+
+            if viewModel.tasks.isEmpty {
+                Spacer()
+                VStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle")
+                        .font(.system(size: 36))
+                        .foregroundColor(.secondary)
+                    Text("No tasks")
+                        .font(.headline)
+                    Text("Add a task manually, or accept AI-proposed tasks.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+            } else {
+                List(viewModel.tasks) { task in
+                    TaskRow(
+                        task: task,
+                        onAccept:   { Task { await viewModel.acceptTask(task) } },
+                        onDismiss:  { Task { await viewModel.dismissTask(task) } },
+                        onComplete: { Task { await viewModel.completeTask(task) } }
+                    )
+                }
+                .listStyle(.inset)
+            }
+        }
+        .sheet(isPresented: $showAddTask, onDismiss: { newTaskTitle = "" }) {
+            VStack(spacing: 16) {
+                Text("New Task")
+                    .font(.headline)
+                TextField("Task title", text: $newTaskTitle)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 280)
+                    .onSubmit { submitTask() }
+                HStack {
+                    Button("Cancel") { showAddTask = false }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Add") { submitTask() }
+                        .keyboardShortcut(.defaultAction)
+                        .disabled(newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .padding(24)
+        }
+    }
+
+    private func submitTask() {
+        let title = newTaskTitle.trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty else { return }
+        showAddTask = false
+        newTaskTitle = ""
+        Task { await viewModel.addTask(title: title) }
+    }
 
 // MARK: - ItemRow
 
@@ -441,40 +629,121 @@ private struct Pill: View {
     }
 }
 
+// MARK: - TaskRow
+
+private struct TaskRow: View {
+    let task: CortexTask
+    let onAccept:   () -> Void
+    let onDismiss:  () -> Void
+    let onComplete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            statusIcon
+            VStack(alignment: .leading, spacing: 4) {
+                Text(task.title)
+                    .font(.body)
+                    .strikethrough(task.status == .completed)
+                    .foregroundColor(task.status == .completed ? .secondary : .primary)
+                if task.status == .proposed {
+                    Text("Proposed")
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.15))
+                        .foregroundColor(.orange)
+                        .cornerRadius(4)
+                }
+            }
+            Spacer()
+            if task.status == .proposed {
+                Button("Accept") { onAccept() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                Button("Dismiss") { onDismiss() }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(.secondary)
+            } else if task.status == .active {
+                Button { onComplete() } label: {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(.green)
+                }
+                .buttonStyle(.plain)
+                .help("Mark complete")
+                Button { onDismiss() } label: {
+                    Image(systemName: "xmark.circle")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Dismiss")
+            }
+        }
+        .padding(.vertical, 4)
+        .opacity(task.status == .completed || task.status == .dismissed ? 0.5 : 1.0)
+    }
+
+    @ViewBuilder
+    private var statusIcon: some View {
+        switch task.status {
+        case .proposed:
+            Image(systemName: "clock.badge.questionmark").foregroundColor(.orange)
+        case .active:
+            Image(systemName: "circle").foregroundColor(.blue)
+        case .completed:
+            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+        case .dismissed:
+            Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
+        }
+    }
+}
+
 // MARK: - SidebarFilter
 
 enum SidebarFilter: Hashable, Identifiable, CaseIterable {
     case all
     case unread
     case starred
+    case connected
+    case tasks
     case platform(SourcePlatform)
+    case project(Project)
 
-    static var allCases: [SidebarFilter] = [.all, .unread, .starred]
+    static var allCases: [SidebarFilter] = [.all, .unread, .starred, .connected, .tasks]
 
     var id: String {
         switch self {
-        case .all:           return "all"
-        case .unread:        return "unread"
-        case .starred:       return "starred"
+        case .all:             return "all"
+        case .unread:          return "unread"
+        case .starred:         return "starred"
+        case .connected:       return "connected"
+        case .tasks:           return "tasks"
         case .platform(let p): return "platform_\(p.rawValue)"
+        case .project(let p):  return "project_\(p.id.map(String.init) ?? "new")"
         }
     }
 
     var title: String {
         switch self {
-        case .all:           return "All Items"
-        case .unread:        return "Unread"
-        case .starred:       return "Starred"
+        case .all:             return "All Items"
+        case .unread:          return "Unread"
+        case .starred:         return "Starred"
+        case .connected:       return "Connected"
+        case .tasks:           return "Tasks"
         case .platform(let p): return p.rawValue.capitalized
+        case .project(let p):  return p.name
         }
     }
 
     var icon: String {
         switch self {
-        case .all:           return "tray.full"
-        case .unread:        return "circle"
-        case .starred:       return "star"
+        case .all:             return "tray.full"
+        case .unread:          return "circle"
+        case .starred:         return "star"
+        case .connected:       return "link"
+        case .tasks:           return "checkmark.circle"
         case .platform(let p): return p.systemImage
+        case .project:         return "folder"
         }
     }
 }
@@ -486,7 +755,73 @@ final class MainWindowViewModel: ObservableObject {
     @Published var filteredItems: [Item] = []
     @Published var totalCount: Int = 0
     @Published var isLoading: Bool = false
+    @Published var projects: [Project] = []
+    @Published var tasks: [CortexTask] = []
     private var currentFilter: SidebarFilter = .all
+
+    func loadProjects() async {
+        guard let db = DatabaseManager.shared.dbQueue else { return }
+        do {
+            projects = try await db.read { db in
+                try Project.allByName.fetchAll(db)
+            }
+        } catch {
+            print("[Cortex] loadProjects failed: \(error)")
+        }
+    }
+
+    func createProject(name: String) async {
+        guard let db = DatabaseManager.shared.dbQueue else { return }
+        var project = Project(name: name)
+        do {
+            try await db.write { db in
+                try project.insert(db)
+                var event = CortexEvent(
+                    eventType: .projectCreated,
+                    entityType: "project",
+                    entityId: project.id,
+                    payload: ["name": project.name],
+                    source: .user
+                )
+                try event.insert(db, onConflict: .ignore)
+            }
+            await loadProjects()
+        } catch {
+            print("[Cortex] createProject failed: \(error)")
+        }
+    }
+
+    func addToProject(_ project: Project, item: Item) async {
+        guard let projectId = project.id,
+              let itemId = item.id,
+              let db = DatabaseManager.shared.dbQueue else { return }
+        let projectItem = ProjectItem(projectId: projectId, itemId: itemId)
+        do {
+            try await db.write { db in
+                try projectItem.insert(db)
+            }
+        } catch {
+            // Composite PK — silently ignore if item already in project
+            print("[Cortex] addToProject skipped (already exists): \(error)")
+        }
+    }
+
+    func removeFromProject(_ project: Project, item: Item) async {
+        guard let projectId = project.id,
+              let itemId = item.id,
+              let db = DatabaseManager.shared.dbQueue else { return }
+        do {
+            try await db.write { db in
+                try db.execute(
+                    sql: "DELETE FROM project_items WHERE project_id = ? AND item_id = ?",
+                    arguments: [projectId, itemId]
+                )
+            }
+            await load(filter: currentFilter)
+        } catch {
+            print("[Cortex] removeFromProject failed: \(error)")
+        }
+    }
 
     func load(filter: SidebarFilter) async {
         currentFilter = filter
@@ -503,11 +838,37 @@ final class MainWindowViewModel: ObservableObject {
                     return try Item.unread.fetchAll(db)
                 case .starred:
                     return try Item.starred.fetchAll(db)
+                case .connected:
+                    return try Item.fetchAll(
+                        db,
+                        sql: """
+                            SELECT DISTINCT items.* FROM items
+                            INNER JOIN connections
+                                ON (connections.item_id_a = items.id OR connections.item_id_b = items.id)
+                            WHERE connections.dismissed = 0
+                            ORDER BY items.captured_at DESC
+                            """
+                    )
                 case .platform(let p):
                     return try Item
                         .filter(Item.Columns.sourcePlatform == p.rawValue)
                         .order(Item.Columns.capturedAt.desc)
                         .fetchAll(db)
+                case .project(let p):
+                    guard let projectId = p.id else { return [] }
+                    return try Item.fetchAll(
+                        db,
+                        sql: """
+                            SELECT items.* FROM items
+                            INNER JOIN project_items ON project_items.item_id = items.id
+                            WHERE project_items.project_id = ?
+                            ORDER BY project_items.added_at DESC
+                            """,
+                        arguments: [projectId]
+                    )
+                case .tasks:
+                    // Tasks view doesn't show items, return empty
+                    return []
                 }
             }
             async let count = db.read { try Item.fetchCount($0) }
@@ -604,6 +965,84 @@ final class MainWindowViewModel: ObservableObject {
             print("[Cortex] openAndMarkRead failed: \(error)")
         }
     }
+
+    // MARK: - Tasks
+
+    func loadTasks() async {
+        guard let db = DatabaseManager.shared.dbQueue else { return }
+        do {
+            tasks = try await db.read { db in
+                try CortexTask.pending.fetchAll(db)
+            }
+        } catch {
+            print("[Cortex] loadTasks error: \(error)")
+        }
+    }
+
+    func addTask(title: String) async {
+        guard let db = DatabaseManager.shared.dbQueue else { return }
+        do {
+            try await db.write { db in
+                var task = CortexTask(title: title, status: .active)
+                try task.insert(db)
+                var event = CortexEvent(
+                    eventType: .taskAccepted,
+                    entityType: "task",
+                    entityId: task.id,
+                    source: .user,
+                    idempotencyKey: "task_created_\(UUID().uuidString)"
+                )
+                try event.insert(db, onConflict: .ignore)
+            }
+            await loadTasks()
+        } catch {
+            print("[Cortex] addTask error: \(error)")
+        }
+    }
+
+    func acceptTask(_ task: CortexTask) async {
+        guard let taskId = task.id else { return }
+        await updateTaskStatus(task, to: .active, eventType: .taskAccepted,
+                               key: "task_accepted_\(taskId)")
+    }
+
+    func dismissTask(_ task: CortexTask) async {
+        guard let taskId = task.id else { return }
+        await updateTaskStatus(task, to: .dismissed, eventType: .taskDismissed,
+                               key: "task_dismissed_\(taskId)")
+    }
+
+    func completeTask(_ task: CortexTask) async {
+        guard let taskId = task.id else { return }
+        await updateTaskStatus(task, to: .completed, eventType: .taskCompleted,
+                               key: "task_completed_\(taskId)")
+    }
+
+    private func updateTaskStatus(_ task: CortexTask, to newStatus: TaskStatus,
+                                  eventType: CortexEventType, key: String) async {
+        guard let db = DatabaseManager.shared.dbQueue, let taskId = task.id else { return }
+        do {
+            try await db.write { [task, newStatus, key, eventType] db in
+                var updated = task
+                updated.status = newStatus
+                updated.updatedAt = Date()
+                try updated.update(db)
+                var event = CortexEvent(
+                    eventType: eventType,
+                    entityType: "task",
+                    entityId: taskId,
+                    source: .user,
+                    idempotencyKey: key
+                )
+                try event.insert(db, onConflict: .ignore)
+            }
+            tasks.removeAll { $0.id == taskId }
+        } catch {
+            print("[Cortex] updateTaskStatus error: \(error)")
+        }
+    }
+}
+
 }
 
 

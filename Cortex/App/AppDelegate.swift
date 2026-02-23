@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
     private var eventMonitor: Any?     // Dismiss popover on outside click
+    private var synthesisTimer: Timer?
 
     // MARK: - App Lifecycle
 
@@ -52,6 +53,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         logger.info("Cortex launched")
+        
+        // 5. Schedule nightly synthesis (fires hourly, runs in 2–6 AM window)
+        scheduleSynthesis()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -191,6 +195,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: "Quit")
         alert.runModal()
         NSApp.terminate(nil)
+    }
+
+    // MARK: - Synthesis Scheduler
+
+    private func scheduleSynthesis() {
+        synthesisTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { _ in
+            let hour = Calendar.current.component(.hour, from: Date())
+            guard (2...5).contains(hour) else { return }
+            Task { await SynthesisService.shared.runSynthesisIfNeeded() }
+        }
     }
 }
 
